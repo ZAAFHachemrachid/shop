@@ -6,17 +6,22 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class ShopDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "shop.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     // Table Names
     public static final String TABLE_PRODUCTS = "products";
     public static final String TABLE_CATEGORIES = "categories";
     public static final String TABLE_CART = "cart";
+    public static final String TABLE_USERS = "users";
 
     // Common Column Names
     public static final String COLUMN_ID = "id";
     public static final String COLUMN_NAME = "name";
     public static final String COLUMN_CREATED_AT = "created_at";
+
+    // Users Table Columns
+    public static final String COLUMN_EMAIL = "email";
+    public static final String COLUMN_PASSWORD_HASH = "password_hash";
 
     // Products Table Columns
     public static final String COLUMN_PRICE = "price";
@@ -67,6 +72,15 @@ public class ShopDatabase extends SQLiteOpenHelper {
             "FOREIGN KEY(" + COLUMN_PRODUCT_ID + ") REFERENCES " + TABLE_PRODUCTS + "(" + COLUMN_ID + ")" +
             ")";
 
+    private static final String CREATE_TABLE_USERS = "CREATE TABLE " + TABLE_USERS +
+            "(" +
+            COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+            COLUMN_EMAIL + " TEXT NOT NULL UNIQUE," +
+            COLUMN_NAME + " TEXT NOT NULL," +
+            COLUMN_PASSWORD_HASH + " TEXT NOT NULL," +
+            COLUMN_CREATED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP" +
+            ")";
+
     private static ShopDatabase instance;
 
     private ShopDatabase(Context context) {
@@ -85,6 +99,7 @@ public class ShopDatabase extends SQLiteOpenHelper {
         db.execSQL(CREATE_TABLE_CATEGORIES);
         db.execSQL(CREATE_TABLE_PRODUCTS);
         db.execSQL(CREATE_TABLE_CART);
+        db.execSQL(CREATE_TABLE_USERS);
     }
 
     @Override
@@ -105,6 +120,11 @@ public class ShopDatabase extends SQLiteOpenHelper {
             // Set original price equal to current price for existing products
             db.execSQL("UPDATE " + TABLE_PRODUCTS + " SET " +
                       COLUMN_ORIGINAL_PRICE + " = " + COLUMN_PRICE);
+        }
+        
+        if (oldVersion < 3) {
+            // Create users table for authentication
+            db.execSQL(CREATE_TABLE_USERS);
         }
     }
 }

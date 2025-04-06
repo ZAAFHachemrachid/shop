@@ -56,4 +56,37 @@
     <string name="content_desc_decrease_quantity">Decrease quantity</string>
     <string name="content_desc_increase_quantity">Increase quantity</string>
     <string name="content_desc_remove_item">Remove item</string>
+
+    <!-- Authentication strings -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="name">Name</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="no_account">Don\'t have an account?</string>
+    <string name="have_account">Already have an account?</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="sign_out">Sign Out</string>
+    
+    <!-- Profile strings -->
+    <string name="edit_profile">Edit Profile</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="change_password">Change Password</string>
+    <string name="current_password">Current Password</string>
+    <string name="new_password">New Password</string>
+    <string name="my_orders">My Orders</string>
+    <string name="settings">Settings</string>
+    
+    <!-- Authentication error messages -->
+    <string name="error_invalid_email">Invalid email address</string>
+    <string name="error_invalid_password">Password must be at least 8 characters with uppercase, lowercase, number and special character</string>
+    <string name="error_passwords_dont_match">Passwords don\'t match</string>
+    <string name="error_email_exists">Email already exists</string>
+    <string name="error_invalid_credentials">Invalid email or password</string>
+    <string name="error_registration_failed">Registration failed</string>
+    <string name="error_login_failed">Login failed</string>
+    <string name="error_wrong_password">Current password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
 </resources>
