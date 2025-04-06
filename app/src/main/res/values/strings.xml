@@ -29,10 +29,15 @@
     <string name="filter_by_category">Filter by Category</string>
     <string name="price_range">Price Range</string>
     <string name="sort_by">Sort By</string>
+    <string name="clear_all_filters">Clear All</string>
     <string name="sort_newest">Newest First</string>
     <string name="sort_price_low">Price: Low to High</string>
     <string name="sort_price_high">Price: High to Low</string>
     <string name="scroll_to_top">Scroll to top</string>
+    <string name="min_price">Min Price</string>
+    <string name="max_price">Max Price</string>
+    <string name="price_validation_error">Maximum price must be greater than minimum price</string>
+    <string name="price_range_label">%1$s - %2$s DZD</string>
 
     <!-- Category strings -->
     <string name="categories">Categories</string>

@@ -23,22 +23,28 @@ import com.example.shop.models.Category;
 import com.example.shop.models.Product;
 import com.example.shop.models.SearchQueryBuilder;
 import com.example.shop.models.SortOption;
+import com.example.shop.views.CustomPriceRangeView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
-import com.google.android.material.slider.RangeSlider;
 import com.google.android.material.textfield.TextInputEditText;
 import java.util.List;
 
-public class ProductsFragment extends Fragment implements ProductAdapter.OnProductClickListener {
+public class ProductsFragment extends Fragment implements
+        ProductAdapter.OnProductClickListener,
+        ActiveFiltersView.OnFilterRemovedListener {
+            
     private TextInputEditText searchInput;
     private ChipGroup categoryChipGroup;
-    private RangeSlider priceRangeSlider;
+    private CustomPriceRangeView priceRangeView;
     private MaterialButton sortButton;
     private RecyclerView productsRecyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
     private View progressIndicator;
     private TextView emptyView;
+    private ActiveFiltersView activeFilters;
+    private CollapsibleFilterSection categoryFilterSection;
+    private CollapsibleFilterSection priceFilterSection;
 
     private ProductDao productDao;
     private CategoryDao categoryDao;
@@ -95,12 +101,22 @@ public class ProductsFragment extends Fragment implements ProductAdapter.OnProdu
     private void initViews(View view) {
         searchInput = view.findViewById(R.id.searchInput);
         categoryChipGroup = view.findViewById(R.id.categoryChipGroup);
-        priceRangeSlider = view.findViewById(R.id.priceRangeSlider);
+        priceRangeView = view.findViewById(R.id.priceRangeView);
         sortButton = view.findViewById(R.id.sortButton);
         productsRecyclerView = view.findViewById(R.id.productsRecyclerView);
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         progressIndicator = view.findViewById(R.id.progressIndicator);
         emptyView = view.findViewById(R.id.emptyView);
+        activeFilters = view.findViewById(R.id.activeFilters);
+        categoryFilterSection = view.findViewById(R.id.categoryFilterSection);
+        priceFilterSection = view.findViewById(R.id.priceFilterSection);
+
+        // Set up filter sections
+        categoryFilterSection.setTitle(R.string.filter_by_category);
+        priceFilterSection.setTitle(R.string.price_range);
+
+        // Set up active filters
+        activeFilters.setOnFilterRemovedListener(this);
     }
 
     private void setupSearchInput() {
@@ -113,7 +129,14 @@ public class ProductsFragment extends Fragment implements ProductAdapter.OnProdu
 
             @Override
             public void afterTextChanged(Editable s) {
-                queryBuilder.setQuery(s.toString());
+                String query = s.toString().trim();
+                queryBuilder.setQuery(query);
+                
+                if (!query.isEmpty()) {
+                    activeFilters.showSearchFilter(query);
+                    activeFilters.setVisibility(View.VISIBLE);
+                }
+                
                 loadProducts();
             }
         });
@@ -143,22 +166,70 @@ public class ProductsFragment extends Fragment implements ProductAdapter.OnProdu
             if (selectedChip != null) {
                 Long categoryId = selectedChip == allCategoriesChip ? null : (Long) selectedChip.getTag();
                 queryBuilder.setCategoryId(categoryId);
+                
+                if (categoryId != null) {
+                    Category category = categoryDao.findById(categoryId);
+                    activeFilters.showCategoryFilter(category);
+                    activeFilters.setVisibility(View.VISIBLE);
+                }
+                
                 loadProducts();
             }
         });
     }
 
     private void setupPriceRangeSlider() {
-        priceRangeSlider.addOnChangeListener((slider, value, fromUser) -> {
-            if (fromUser) {
-                List<Float> values = slider.getValues();
-                queryBuilder.setPriceRange(
-                    values.get(0).doubleValue(),
-                    values.get(1).doubleValue()
-                );
-                loadProducts();
-            }
+        // Set initial value range based on product prices
+        priceRangeView.setValueRange(0f, 10000f);
+        // Set initial price range
+        priceRangeView.setPriceRange(0f, 10000f);
+        
+        priceRangeView.setOnPriceRangeChangedListener((minPrice, maxPrice) -> {
+            queryBuilder.setPriceRange(Double.valueOf(minPrice), Double.valueOf(maxPrice));
+            activeFilters.showPriceFilter(minPrice, maxPrice);
+            activeFilters.setVisibility(View.VISIBLE);
+            loadProducts();
         });
+    }
+
+    @Override
+    public void onCategoryFilterRemoved() {
+        categoryChipGroup.clearCheck();
+        queryBuilder.setCategoryId(null);
+        loadProducts();
+        if (!queryBuilder.hasActiveFilters()) {
+            activeFilters.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onPriceFilterRemoved() {
+        priceRangeView.setPriceRange(0f, 10000f);
+        queryBuilder.setPriceRange(null, null);
+        loadProducts();
+        if (!queryBuilder.hasActiveFilters()) {
+            activeFilters.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onSearchFilterRemoved() {
+        searchInput.setText("");
+        queryBuilder.setQuery(null);
+        loadProducts();
+        if (!queryBuilder.hasActiveFilters()) {
+            activeFilters.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onAllFiltersRemoved() {
+        searchInput.setText("");
+        categoryChipGroup.clearCheck();
+        priceRangeView.setPriceRange(0f, 10000f);
+        queryBuilder.clear();
+        loadProducts();
+        activeFilters.setVisibility(View.GONE);
     }
 
     private void setupSortButton() {
