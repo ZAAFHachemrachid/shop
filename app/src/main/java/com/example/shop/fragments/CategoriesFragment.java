@@ -15,6 +15,9 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.example.shop.db.ShopDatabase;
+import com.example.shop.db.dao.ProductDao;
+
 import com.example.shop.R;
 import com.example.shop.adapters.ProductAdapter;
 import com.example.shop.models.Category;
@@ -36,6 +39,7 @@ public class CategoriesFragment extends Fragment {
     private RecyclerView productsRecyclerView;
     private ProductAdapter productAdapter;
     private ProductViewModel productViewModel;
+    private ProductDao productDao;
     private TextView emptyView;
     private CircularProgressIndicator progressIndicator;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -61,6 +65,10 @@ public class CategoriesFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // Initialize database access
+        ShopDatabase db = ShopDatabase.getInstance(requireContext());
+        productDao = new ProductDao(db);
         
         // Initialize views
         productsRecyclerView = view.findViewById(R.id.productsRecyclerView);
@@ -83,6 +91,12 @@ public class CategoriesFragment extends Fragment {
             @Override
             public void onAddToCartClick(Product product) {
                 // Handle add to cart
+            }
+
+            @Override
+            public void onFavoriteClick(Product product) {
+                product.setFavorite(!product.isFavorite());
+                productDao.update(product);
             }
         });
         

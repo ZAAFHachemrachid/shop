@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <!-- Product Image -->
+        <ImageView
+            android:id="@+id/imageProduct"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/title_cart"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Product Name -->
+        <TextView
+            android:id="@+id/textProductName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toStartOf="@id/buttonRemove"
+            app:layout_constraintStart_toEndOf="@id/imageProduct"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Price per item -->
+        <TextView
+            android:id="@+id/textPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="@id/textProductName"
+            app:layout_constraintTop_toBottomOf="@id/textProductName" />
+
+        <!-- Quantity Controls -->
+        <ImageButton
+            android:id="@+id/buttonDecrease"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/content_desc_decrease_quantity"
+            android:src="@drawable/ic_remove"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="@id/textProductName"
+            app:layout_constraintTop_toBottomOf="@id/textPrice" />
+
+        <TextView
+            android:id="@+id/textQuantity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="12dp"
+            android:minWidth="24dp"
+            android:textAlignment="center"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="@id/buttonDecrease"
+            app:layout_constraintStart_toEndOf="@id/buttonDecrease"
+            app:layout_constraintTop_toTopOf="@id/buttonDecrease" />
+
+        <ImageButton
+            android:id="@+id/buttonIncrease"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/content_desc_increase_quantity"
+            android:src="@drawable/ic_add"
+            app:layout_constraintBottom_toBottomOf="@id/buttonDecrease"
+            app:layout_constraintStart_toEndOf="@id/textQuantity"
+            app:layout_constraintTop_toTopOf="@id/buttonDecrease" />
+
+        <!-- Subtotal -->
+        <TextView
+            android:id="@+id/textSubtotal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/buttonDecrease"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/buttonDecrease" />
+
+        <!-- Remove Button -->
+        <ImageButton
+            android:id="@+id/buttonRemove"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/content_desc_remove_item"
+            android:src="@drawable/ic_close"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

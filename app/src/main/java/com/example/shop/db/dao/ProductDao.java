@@ -22,8 +22,13 @@ public class ProductDao {
         values.put(ShopDatabase.COLUMN_NAME, product.getName());
         values.put(ShopDatabase.COLUMN_DESCRIPTION, product.getDescription());
         values.put(ShopDatabase.COLUMN_PRICE, product.getPrice());
+        values.put(ShopDatabase.COLUMN_ORIGINAL_PRICE, product.getOriginalPrice());
         values.put(ShopDatabase.COLUMN_IMAGE, product.getImage());
         values.put(ShopDatabase.COLUMN_CATEGORY_ID, product.getCategoryId());
+        values.put(ShopDatabase.COLUMN_QUANTITY_IN_STOCK, product.getQuantityInStock());
+        values.put(ShopDatabase.COLUMN_RATING, product.getRating());
+        values.put(ShopDatabase.COLUMN_RATING_COUNT, product.getRatingCount());
+        values.put(ShopDatabase.COLUMN_IS_FAVORITE, product.isFavorite() ? 1 : 0);
 
         long id = db.insert(ShopDatabase.TABLE_PRODUCTS, null, values);
         product.setId(id);
@@ -36,12 +41,54 @@ public class ProductDao {
         values.put(ShopDatabase.COLUMN_NAME, product.getName());
         values.put(ShopDatabase.COLUMN_DESCRIPTION, product.getDescription());
         values.put(ShopDatabase.COLUMN_PRICE, product.getPrice());
+        values.put(ShopDatabase.COLUMN_ORIGINAL_PRICE, product.getOriginalPrice());
         values.put(ShopDatabase.COLUMN_IMAGE, product.getImage());
         values.put(ShopDatabase.COLUMN_CATEGORY_ID, product.getCategoryId());
+        values.put(ShopDatabase.COLUMN_QUANTITY_IN_STOCK, product.getQuantityInStock());
+        values.put(ShopDatabase.COLUMN_RATING, product.getRating());
+        values.put(ShopDatabase.COLUMN_RATING_COUNT, product.getRatingCount());
+        values.put(ShopDatabase.COLUMN_IS_FAVORITE, product.isFavorite() ? 1 : 0);
 
         return db.update(ShopDatabase.TABLE_PRODUCTS, values,
                 ShopDatabase.COLUMN_ID + " = ?",
                 new String[]{String.valueOf(product.getId())});
+    }
+
+    public int updateFavoriteStatus(long productId, boolean isFavorite) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(ShopDatabase.COLUMN_IS_FAVORITE, isFavorite ? 1 : 0);
+
+        return db.update(ShopDatabase.TABLE_PRODUCTS, values,
+                ShopDatabase.COLUMN_ID + " = ?",
+                new String[]{String.valueOf(productId)});
+    }
+
+    public int updateStock(long productId, int quantity) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(ShopDatabase.COLUMN_QUANTITY_IN_STOCK, quantity);
+
+        return db.update(ShopDatabase.TABLE_PRODUCTS, values,
+                ShopDatabase.COLUMN_ID + " = ?",
+                new String[]{String.valueOf(productId)});
+    }
+
+    public void addRating(long productId, float rating) {
+        Product product = get(productId);
+        if (product != null) {
+            double newRating = ((product.getRating() * product.getRatingCount()) + rating)
+                             / (product.getRatingCount() + 1);
+            
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            ContentValues values = new ContentValues();
+            values.put(ShopDatabase.COLUMN_RATING, newRating);
+            values.put(ShopDatabase.COLUMN_RATING_COUNT, product.getRatingCount() + 1);
+
+            db.update(ShopDatabase.TABLE_PRODUCTS, values,
+                    ShopDatabase.COLUMN_ID + " = ?",
+                    new String[]{String.valueOf(productId)});
+        }
     }
 
     public void delete(long productId) {
@@ -149,8 +196,13 @@ public class ProductDao {
                 cursor.getString(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_NAME)),
                 cursor.getString(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_DESCRIPTION)),
                 cursor.getDouble(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_PRICE)),
+                cursor.getDouble(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_ORIGINAL_PRICE)),
                 cursor.getString(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_IMAGE)),
                 cursor.getLong(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_CATEGORY_ID)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_QUANTITY_IN_STOCK)),
+                cursor.getDouble(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_RATING)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_RATING_COUNT)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_IS_FAVORITE)) == 1,
                 cursor.getString(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_CREATED_AT))
         );
     }

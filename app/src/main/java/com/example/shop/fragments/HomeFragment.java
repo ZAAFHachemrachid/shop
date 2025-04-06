@@ -207,19 +207,31 @@ public class HomeFragment extends Fragment implements
         }
 
         Product[] dummyProducts = {
-            new Product("Smartphone", "Latest model with great camera", 699.99, "", 1),
-            new Product("Laptop", "High performance for work and gaming", 1299.99, "", 2),
-            new Product("Headphones", "Wireless with noise cancellation", 199.99, "", 3),
-            new Product("Smartwatch", "Fitness tracker with heart rate monitor", 299.99, "", 4),
-            new Product("Tablet", "10-inch display with stylus support", 499.99, "", 1),
-            new Product("Camera", "4K video with 20MP photos", 799.99, "", 2),
-            new Product("Drone", "4K camera with 30-minute flight time", 999.99, "", 3),
-            new Product("Gaming Console", "Latest generation with 1TB storage", 599.99, "", 4)
+            createDummyProduct("Smartphone", "Latest model with great camera", 699.99, 799.99, 1, 50, 4.5f, 128),
+            createDummyProduct("Laptop", "High performance for work and gaming", 1299.99, 1499.99, 2, 25, 4.7f, 245),
+            createDummyProduct("Headphones", "Wireless with noise cancellation", 199.99, 249.99, 3, 100, 4.3f, 512),
+            createDummyProduct("Smartwatch", "Fitness tracker with heart rate monitor", 299.99, 299.99, 4, 75, 4.1f, 89),
+            createDummyProduct("Tablet", "10-inch display with stylus support", 499.99, 549.99, 1, 30, 4.6f, 167),
+            createDummyProduct("Camera", "4K video with 20MP photos", 799.99, 899.99, 2, 15, 4.8f, 78),
+            createDummyProduct("Drone", "4K camera with 30-minute flight time", 999.99, 1199.99, 3, 10, 4.4f, 45),
+            createDummyProduct("Gaming Console", "Latest generation with 1TB storage", 599.99, 599.99, 4, 40, 4.9f, 892)
         };
 
         for (Product product : dummyProducts) {
             productDao.insert(product);
         }
+    }
+
+    private Product createDummyProduct(String name, String description, double price,
+                                     double originalPrice, long categoryId, int stock,
+                                     float rating, int ratingCount) {
+        Product product = new Product(name, description, price, "", categoryId);
+        product.setOriginalPrice(originalPrice);
+        product.setQuantityInStock(stock);
+        product.setRating(rating);
+        product.setRatingCount(ratingCount);
+        product.setFavorite(false);
+        return product;
     }
     
     private List<Category> getDummyCategories() {
@@ -275,5 +287,14 @@ public class HomeFragment extends Fragment implements
     public void onBannerClick(Banner banner) {
         // TODO: Navigate based on banner target
         Toast.makeText(requireContext(), "Banner clicked: " + banner.getTitle(), Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onFavoriteClick(Product product) {
+        product.setFavorite(!product.isFavorite());
+        productDao.update(product);
+        Toast.makeText(requireContext(),
+            product.isFavorite() ? "Added to favorites" : "Removed from favorites",
+            Toast.LENGTH_SHORT).show();
     }
 }

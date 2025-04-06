@@ -1,14 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_scrollFlags="scroll|enterAlways|snap">
+
+            <androidx.appcompat.widget.SearchView
+                android:id="@+id/searchView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/search_background"
+                android:queryHint="@string/search_products"
+                app:iconifiedByDefault="false"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
@@ -20,57 +47,37 @@
                 android:layout_height="wrap_content"
                 android:paddingBottom="16dp">
 
-                <!-- Search Bar -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/searchBarCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="16dp"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="2dp"
-                    app:layout_constraintTop_toTopOf="parent">
-
-                    <androidx.appcompat.widget.SearchView
-                        android:id="@+id/searchView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
-                        android:iconifiedByDefault="false"
-                        android:queryHint="@string/search_products" />
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Banner/Carousel -->
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/bannerViewPager"
                     android:layout_width="match_parent"
                     android:layout_height="180dp"
-                    android:layout_marginTop="8dp"
                     android:clipToPadding="false"
-                    app:layout_constraintTop_toBottomOf="@id/searchBarCard" />
+                    app:layout_constraintTop_toTopOf="parent" />
 
-                <!-- Dot indicators for carousel -->
                 <com.google.android.material.tabs.TabLayout
                     android:id="@+id/bannerIndicator"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
                     android:background="@android:color/transparent"
-                    app:layout_constraintTop_toBottomOf="@id/bannerViewPager"
+                    app:layout_constraintBottom_toBottomOf="@id/bannerViewPager"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
                     app:tabBackground="@drawable/tab_selector"
                     app:tabGravity="center"
                     app:tabIndicatorHeight="0dp" />
 
-                <!-- Categories Section Header -->
                 <TextView
-                    android:id="@+id/categoriesHeaderTextView"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/categoriesTitle"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
                     android:text="@string/categories"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
+                    android:textAppearance="?attr/textAppearanceHeadline6"
+                    app:layout_constraintEnd_toStartOf="@id/viewAllCategories"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/bannerIndicator" />
+                    app:layout_constraintTop_toBottomOf="@id/bannerViewPager" />
 
                 <TextView
                     android:id="@+id/viewAllCategories"
@@ -78,38 +85,34 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
                     android:text="@string/view_all"
-                    android:textColor="@color/purple_500"
-                    app:layout_constraintBaseline_toBaselineOf="@id/categoriesHeaderTextView"
+                    android:textColor="?attr/colorPrimary"
+                    app:layout_constraintBaseline_toBaselineOf="@id/categoriesTitle"
                     app:layout_constraintEnd_toEndOf="parent" />
 
-                <!-- Categories Horizontal RecyclerView -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/categoriesRecyclerView"
                     android:layout_width="match_parent"
-                    android:layout_height="110dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:clipToPadding="false"
                     android:orientation="horizontal"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
+                    android:paddingHorizontal="8dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    app:layout_constraintTop_toBottomOf="@id/categoriesHeaderTextView"
+                    app:layout_constraintTop_toBottomOf="@id/categoriesTitle"
+                    tools:itemCount="5"
                     tools:listitem="@layout/item_category" />
 
-                <!-- Featured Products Header -->
                 <TextView
-                    android:id="@+id/featuredProductsHeaderTextView"
+                    android:id="@+id/featuredTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="24dp"
                     android:text="@string/featured_products"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
+                    android:textAppearance="?attr/textAppearanceHeadline6"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/categoriesRecyclerView" />
 
-                <!-- Products Grid RecyclerView -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/productsRecyclerView"
                     android:layout_width="match_parent"
@@ -117,36 +120,33 @@
                     android:clipToPadding="false"
                     android:padding="8dp"
                     app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                    app:layout_constraintTop_toBottomOf="@id/featuredProductsHeaderTextView"
+                    app:layout_constraintTop_toBottomOf="@id/featuredTitle"
                     app:spanCount="2"
+                    tools:itemCount="6"
                     tools:listitem="@layout/item_product" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
+
         </androidx.core.widget.NestedScrollView>
+
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         tools:visibility="visible" />
 
     <TextView
         android:id="@+id/emptyView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:text="@string/no_products_available"
-        android:textSize="16sp"
+        android:textAppearance="?attr/textAppearanceHeadline6"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         tools:visibility="visible" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -30,7 +30,7 @@ import com.google.android.material.slider.RangeSlider;
 import com.google.android.material.textfield.TextInputEditText;
 import java.util.List;
 
-public class SearchFragment extends Fragment implements ProductAdapter.OnProductClickListener {
+public class ProductsFragment extends Fragment implements ProductAdapter.OnProductClickListener {
     private TextInputEditText searchInput;
     private ChipGroup categoryChipGroup;
     private RangeSlider priceRangeSlider;
@@ -50,7 +50,7 @@ public class SearchFragment extends Fragment implements ProductAdapter.OnProduct
     public View onCreateView(@NonNull LayoutInflater inflater,
                            @Nullable ViewGroup container,
                            @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_categories, container, false);
+        return inflater.inflate(R.layout.fragment_products, container, false);
     }
 
     @Override

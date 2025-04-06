@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class ShopDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "shop.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     // Table Names
     public static final String TABLE_PRODUCTS = "products";
@@ -20,9 +20,14 @@ public class ShopDatabase extends SQLiteOpenHelper {
 
     // Products Table Columns
     public static final String COLUMN_PRICE = "price";
+    public static final String COLUMN_ORIGINAL_PRICE = "original_price";
     public static final String COLUMN_DESCRIPTION = "description";
     public static final String COLUMN_IMAGE = "image";
     public static final String COLUMN_CATEGORY_ID = "category_id";
+    public static final String COLUMN_QUANTITY_IN_STOCK = "quantity_in_stock";
+    public static final String COLUMN_RATING = "rating";
+    public static final String COLUMN_RATING_COUNT = "rating_count";
+    public static final String COLUMN_IS_FAVORITE = "is_favorite";
 
     // Cart Table Columns
     public static final String COLUMN_PRODUCT_ID = "product_id";
@@ -42,8 +47,13 @@ public class ShopDatabase extends SQLiteOpenHelper {
             COLUMN_NAME + " TEXT NOT NULL," +
             COLUMN_DESCRIPTION + " TEXT," +
             COLUMN_PRICE + " REAL NOT NULL," +
+            COLUMN_ORIGINAL_PRICE + " REAL NOT NULL," +
             COLUMN_IMAGE + " TEXT," +
             COLUMN_CATEGORY_ID + " INTEGER," +
+            COLUMN_QUANTITY_IN_STOCK + " INTEGER DEFAULT 0," +
+            COLUMN_RATING + " REAL DEFAULT 0," +
+            COLUMN_RATING_COUNT + " INTEGER DEFAULT 0," +
+            COLUMN_IS_FAVORITE + " INTEGER DEFAULT 0," +
             COLUMN_CREATED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP," +
             "FOREIGN KEY(" + COLUMN_CATEGORY_ID + ") REFERENCES " + TABLE_CATEGORIES + "(" + COLUMN_ID + ")" +
             ")";
@@ -79,12 +89,22 @@ public class ShopDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Drop older tables if existed
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CART);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_PRODUCTS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
-        
-        // Create tables again
-        onCreate(db);
+        if (oldVersion < 2) {
+            // Add new columns for enhanced product features
+            db.execSQL("ALTER TABLE " + TABLE_PRODUCTS + " ADD COLUMN " +
+                      COLUMN_ORIGINAL_PRICE + " REAL DEFAULT 0");
+            db.execSQL("ALTER TABLE " + TABLE_PRODUCTS + " ADD COLUMN " +
+                      COLUMN_QUANTITY_IN_STOCK + " INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE " + TABLE_PRODUCTS + " ADD COLUMN " +
+                      COLUMN_RATING + " REAL DEFAULT 0");
+            db.execSQL("ALTER TABLE " + TABLE_PRODUCTS + " ADD COLUMN " +
+                      COLUMN_RATING_COUNT + " INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE " + TABLE_PRODUCTS + " ADD COLUMN " +
+                      COLUMN_IS_FAVORITE + " INTEGER DEFAULT 0");
+            
+            // Set original price equal to current price for existing products
+            db.execSQL("UPDATE " + TABLE_PRODUCTS + " SET " +
+                      COLUMN_ORIGINAL_PRICE + " = " + COLUMN_PRICE);
+        }
     }
 }
