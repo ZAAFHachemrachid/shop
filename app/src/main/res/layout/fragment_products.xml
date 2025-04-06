@@ -127,8 +127,7 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:padding="8dp"
-            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-            app:spanCount="2"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/item_product" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

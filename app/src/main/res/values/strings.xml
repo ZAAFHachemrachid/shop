@@ -6,7 +6,7 @@
     <string name="title_cart">Cart</string>
     <string name="title_categories">Categories</string>
     <string name="title_profile">Profile</string>
-    <string name="title_products">Title Product</string>
+    <string name="title_products">Products</string>
     
     <!-- Cart strings -->
     <string name="cart_empty">Your cart is empty</string>

@@ -1,5 +1,6 @@
 package com.example.shop.adapters;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,6 +8,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.shop.R;
 import com.example.shop.models.Banner;
 import java.util.ArrayList;
@@ -70,9 +73,56 @@ public class BannerAdapter extends RecyclerView.Adapter<BannerAdapter.BannerView
             bannerTitle.setText(banner.getTitle());
             bannerDescription.setText(banner.getDescription());
             
-            // TODO: Load banner image using a library like Glide
-            // For now, we'll use a placeholder
-            bannerImage.setImageResource(R.drawable.ic_launcher_background);
+            // Load banner image using Glide
+            if (!TextUtils.isEmpty(banner.getImage())) {
+                try {
+                    // For drawable resources
+                    if (banner.getImage().startsWith("drawable-nodpi/") ||
+                        banner.getImage().startsWith("@drawable/")) {
+                        
+                        // Extract resource name from path
+                        String resourceName = banner.getImage();
+                        if (resourceName.contains("/")) {
+                            resourceName = resourceName.substring(resourceName.lastIndexOf("/") + 1);
+                        }
+                        if (resourceName.contains(".")) {
+                            resourceName = resourceName.substring(0, resourceName.lastIndexOf("."));
+                        }
+                        
+                        // Get resource ID dynamically
+                        int resourceId = itemView.getContext().getResources().getIdentifier(
+                            resourceName, "drawable", itemView.getContext().getPackageName());
+                        
+                        if (resourceId != 0) {
+                            Glide.with(itemView.getContext())
+                                .load(resourceId)
+                                .apply(new RequestOptions()
+                                    .placeholder(R.drawable.ic_launcher_background)
+                                    .error(R.drawable.ic_launcher_background)
+                                    .centerCrop())
+                                .into(bannerImage);
+                        } else {
+                            // Resource not found, use placeholder
+                            bannerImage.setImageResource(R.drawable.ic_launcher_background);
+                        }
+                    } else {
+                        // For file paths or URLs
+                        Glide.with(itemView.getContext())
+                            .load(banner.getImage())
+                            .apply(new RequestOptions()
+                                .placeholder(R.drawable.ic_launcher_background)
+                                .error(R.drawable.ic_launcher_background)
+                                .centerCrop())
+                            .into(bannerImage);
+                    }
+                } catch (Exception e) {
+                    // If any error occurs, use placeholder
+                    bannerImage.setImageResource(R.drawable.ic_launcher_background);
+                }
+            } else {
+                // Use placeholder if no image available
+                bannerImage.setImageResource(R.drawable.ic_launcher_background);
+            }
         }
     }
 } 

@@ -1,5 +1,7 @@
 package com.example.shop.adapters;
 
+import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,6 +9,8 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.shop.R;
 import com.example.shop.models.Product;
 import com.google.android.material.button.MaterialButton;
@@ -162,9 +166,56 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                 R.drawable.ic_favorite_border
             );
             
-            // TODO: Load product image using a library like Glide
-            // For now, we'll use a placeholder
-            productImage.setImageResource(R.drawable.ic_launcher_background);
+            // Load product image using Glide
+            if (!TextUtils.isEmpty(product.getImage())) {
+                try {
+                    // For drawable resources
+                    if (product.getImage().startsWith("drawable-nodpi/") || 
+                        product.getImage().startsWith("@drawable/")) {
+                        
+                        // Extract resource name from path
+                        String resourceName = product.getImage();
+                        if (resourceName.contains("/")) {
+                            resourceName = resourceName.substring(resourceName.lastIndexOf("/") + 1);
+                        }
+                        if (resourceName.contains(".")) {
+                            resourceName = resourceName.substring(0, resourceName.lastIndexOf("."));
+                        }
+                        
+                        // Get resource ID dynamically
+                        int resourceId = itemView.getContext().getResources().getIdentifier(
+                            resourceName, "drawable", itemView.getContext().getPackageName());
+                        
+                        if (resourceId != 0) {
+                            Glide.with(itemView.getContext())
+                                .load(resourceId)
+                                .apply(new RequestOptions()
+                                    .placeholder(R.drawable.ic_launcher_background)
+                                    .error(R.drawable.ic_launcher_background)
+                                    .centerCrop())
+                                .into(productImage);
+                        } else {
+                            // Resource not found, use placeholder
+                            productImage.setImageResource(R.drawable.ic_launcher_background);
+                        }
+                    } else {
+                        // For file paths or URLs
+                        Glide.with(itemView.getContext())
+                            .load(product.getImage())
+                            .apply(new RequestOptions()
+                                .placeholder(R.drawable.ic_launcher_background)
+                                .error(R.drawable.ic_launcher_background)
+                                .centerCrop())
+                            .into(productImage);
+                    }
+                } catch (Exception e) {
+                    // If any error occurs, use placeholder
+                    productImage.setImageResource(R.drawable.ic_launcher_background);
+                }
+            } else {
+                // Use placeholder if no image available
+                productImage.setImageResource(R.drawable.ic_launcher_background);
+            }
         }
 
         private int calculateDiscount(double originalPrice, double currentPrice) {
