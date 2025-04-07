@@ -1,10 +1,28 @@
 package com.example.shop.models;
 
+import androidx.room.Entity;
+import androidx.room.Index;
+import androidx.room.PrimaryKey;
+import androidx.room.ColumnInfo;
+
+@Entity(
+    tableName = "users",
+    indices = {@Index(value = {"email"}, unique = true)}
+)
 public class User {
+    @PrimaryKey(autoGenerate = true)
     private long id;
+
+    @ColumnInfo(name = "email")
     private String email;
+
+    @ColumnInfo(name = "name")
     private String name;
+
+    @ColumnInfo(name = "password_hash")
     private String passwordHash;
+
+    @ColumnInfo(name = "created_at")
     private String createdAt;
 
     public User() {

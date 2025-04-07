@@ -1,9 +1,21 @@
 package com.example.shop.models;
 
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.room.ColumnInfo;
+
+@Entity(tableName = "categories")
 public class Category {
+    @PrimaryKey(autoGenerate = true)
     private long id;
+
+    @ColumnInfo(name = "name")
     private String name;
+
+    @ColumnInfo(name = "created_at")
     private String createdAt;
+
+    @ColumnInfo(name = "image_url")
     private String imageUrl;
 
     public Category() {

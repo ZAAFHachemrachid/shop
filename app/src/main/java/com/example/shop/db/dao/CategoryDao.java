@@ -1,85 +1,32 @@
 package com.example.shop.db.dao;
 
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import com.example.shop.db.ShopDatabase;
+import androidx.room.Dao;
+import androidx.room.Insert;
+import androidx.room.Query;
+import androidx.room.Update;
+import androidx.room.Delete;
+
 import com.example.shop.models.Category;
-import java.util.ArrayList;
+
 import java.util.List;
 
-public class CategoryDao {
-    private ShopDatabase dbHelper;
+@Dao
+public interface CategoryDao {
+    @Insert
+    long insert(Category category);
 
-    public CategoryDao(ShopDatabase dbHelper) {
-        this.dbHelper = dbHelper;
-    }
+    @Update
+    int update(Category category);
 
-    public long insert(Category category) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(ShopDatabase.COLUMN_NAME, category.getName());
-        
-        long id = db.insert(ShopDatabase.TABLE_CATEGORIES, null, values);
-        category.setId(id);
-        return id;
-    }
+    @Delete
+    void delete(Category category);
 
-    public int update(Category category) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(ShopDatabase.COLUMN_NAME, category.getName());
-        
-        return db.update(ShopDatabase.TABLE_CATEGORIES, values,
-                ShopDatabase.COLUMN_ID + " = ?",
-                new String[]{String.valueOf(category.getId())});
-    }
+    @Query("SELECT * FROM categories WHERE id = :categoryId")
+    Category findById(long categoryId);
 
-    public void delete(long categoryId) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.delete(ShopDatabase.TABLE_CATEGORIES,
-                ShopDatabase.COLUMN_ID + " = ?",
-                new String[]{String.valueOf(categoryId)});
-    }
+    @Query("SELECT * FROM categories ORDER BY name ASC")
+    List<Category> getAll();
 
-    public Category get(long categoryId) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query(ShopDatabase.TABLE_CATEGORIES,
-                null,
-                ShopDatabase.COLUMN_ID + " = ?",
-                new String[]{String.valueOf(categoryId)},
-                null, null, null);
-
-        Category category = null;
-        if (cursor != null && cursor.moveToFirst()) {
-            category = createFromCursor(cursor);
-            cursor.close();
-        }
-        return category;
-    }
-
-    public List<Category> getAll() {
-        List<Category> categories = new ArrayList<>();
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        
-        Cursor cursor = db.query(ShopDatabase.TABLE_CATEGORIES,
-                null, null, null, null, null,
-                ShopDatabase.COLUMN_NAME + " ASC");
-
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                categories.add(createFromCursor(cursor));
-            } while (cursor.moveToNext());
-            cursor.close();
-        }
-        return categories;
-    }
-
-    private Category createFromCursor(Cursor cursor) {
-        return new Category(
-                cursor.getLong(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_ID)),
-                cursor.getString(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_NAME)),
-                cursor.getString(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_CREATED_AT))
-        );
-    }
+    @Query("SELECT * FROM categories WHERE name LIKE '%' || :query || '%'")
+    List<Category> search(String query);
 }

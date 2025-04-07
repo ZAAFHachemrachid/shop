@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Base theme colors -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
@@ -7,5 +8,20 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="clearAllChipBackground">#FFF5F5F5</color>
+
+    <!-- App specific colors -->
+    <color name="colorPrimary">@color/purple_500</color>
+    <color name="colorPrimaryDark">@color/purple_700</color>
+    <color name="colorAccent">@color/teal_200</color>
+    
+    <!-- Shimmer colors -->
+    <color name="shimmer_background">#DDDDDD</color>
+    <color name="shimmer_highlight">#E7E7E7</color>
+    
+    <!-- Product list colors -->
+    <color name="price_text">#2E7D32</color>
+    <color name="discount_background">#FFF44336</color>
+    <color name="discount_text">#FFFFFF</color>
+    <color name="rating_background">#FBC02D</color>
+    <color name="out_of_stock">#B71C1C</color>
 </resources>

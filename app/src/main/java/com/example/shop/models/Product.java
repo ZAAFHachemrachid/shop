@@ -1,19 +1,50 @@
 package com.example.shop.models;
 
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.room.ColumnInfo;
+import androidx.room.Ignore;
+
+@Entity(tableName = "products")
 public class Product {
+    @PrimaryKey(autoGenerate = true)
     private long id;
+
+    @ColumnInfo(name = "name")
     private String name;
+
+    @ColumnInfo(name = "description")
     private String description;
+
+    @ColumnInfo(name = "price")
     private double price;
+
+    @ColumnInfo(name = "image")
     private String image;
+
+    @ColumnInfo(name = "category_id")
     private long categoryId;
+
+    @ColumnInfo(name = "created_at")
     private String createdAt;
+
+    @ColumnInfo(name = "original_price")
     private double originalPrice;
+
+    @ColumnInfo(name = "quantity_in_stock")
     private int quantityInStock;
+
+    @ColumnInfo(name = "rating")
     private float rating;
+
+    @ColumnInfo(name = "rating_count")
     private int ratingCount;
+
+    @ColumnInfo(name = "is_favorite")
     private boolean favorite;
-    private transient Category category; // Transient object for UI purposes
+
+    @Ignore
+    private Category category; // Transient object for UI purposes
 
     public Product() {
     }

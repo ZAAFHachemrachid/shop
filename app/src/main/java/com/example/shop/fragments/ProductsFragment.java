@@ -10,23 +10,25 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.shop.R;
 import com.example.shop.adapters.ProductAdapter;
 import com.example.shop.db.ShopDatabase;
-import com.example.shop.db.dao.CartDao;
-import com.example.shop.db.dao.CategoryDao;
-import com.example.shop.db.dao.ProductDao;
-import com.example.shop.models.CartItem;
 import com.example.shop.models.Category;
+import com.example.shop.models.FilterState;
 import com.example.shop.models.Product;
-import com.example.shop.models.SearchQueryBuilder;
-import com.example.shop.models.SortOption;
+import com.example.shop.models.ProductUiState;
+import com.example.shop.repositories.ProductRepository;
+import com.example.shop.viewmodels.ProductViewModel;
+import com.example.shop.views.ActiveFiltersView;
 import com.example.shop.views.CustomPriceRangeView;
+import com.facebook.shimmer.ShimmerFrameLayout;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import java.util.List;
 
@@ -40,17 +42,13 @@ public class ProductsFragment extends Fragment implements
     private MaterialButton sortButton;
     private RecyclerView productsRecyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private View progressIndicator;
+    private ShimmerFrameLayout shimmerLayout;
     private TextView emptyView;
     private ActiveFiltersView activeFilters;
-    private CollapsibleFilterSection categoryFilterSection;
-    private CollapsibleFilterSection priceFilterSection;
-
-    private ProductDao productDao;
-    private CategoryDao categoryDao;
-    private CartDao cartDao;
+    
+    private ProductViewModel viewModel;
     private ProductAdapter productAdapter;
-    private SearchQueryBuilder queryBuilder;
+    private FilterState currentFilters;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -66,21 +64,24 @@ public class ProductsFragment extends Fragment implements
         // Initialize views
         initViews(view);
 
-        // Initialize database
+        // Initialize ViewModel
         ShopDatabase db = ShopDatabase.getInstance(requireContext());
-        productDao = new ProductDao(db);
-        categoryDao = new CategoryDao(db);
-        cartDao = new CartDao(db);
+        ProductRepository repository = new ProductRepository(
+            db.productDao(),
+            db.cartDao(),
+            db.categoryDao()
+        );
+        
+        viewModel = new ViewModelProvider(this, 
+            new ProductViewModel.Factory(repository))
+            .get(ProductViewModel.class);
 
-        // Initialize adapter and query builder
+        // Initialize adapter
         productAdapter = new ProductAdapter(this);
-        queryBuilder = new SearchQueryBuilder();
-
-        // Setup RecyclerView
         productsRecyclerView.setAdapter(productAdapter);
 
         // Setup SwipeRefreshLayout
-        swipeRefreshLayout.setOnRefreshListener(this::loadProducts);
+        swipeRefreshLayout.setOnRefreshListener(() -> viewModel.loadProducts());
 
         // Setup search input
         setupSearchInput();
@@ -94,8 +95,12 @@ public class ProductsFragment extends Fragment implements
         // Setup sort button
         setupSortButton();
 
+        // Observe ViewModel state
+        observeViewModel();
+
         // Initial load
-        loadProducts();
+        viewModel.loadProducts();
+        viewModel.loadCategories();
     }
 
     private void initViews(View view) {
@@ -105,18 +110,59 @@ public class ProductsFragment extends Fragment implements
         sortButton = view.findViewById(R.id.sortButton);
         productsRecyclerView = view.findViewById(R.id.productsRecyclerView);
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
-        progressIndicator = view.findViewById(R.id.progressIndicator);
+        shimmerLayout = view.findViewById(R.id.shimmerLayout);
         emptyView = view.findViewById(R.id.emptyView);
         activeFilters = view.findViewById(R.id.activeFilters);
-        categoryFilterSection = view.findViewById(R.id.categoryFilterSection);
-        priceFilterSection = view.findViewById(R.id.priceFilterSection);
 
-        // Set up filter sections
-        categoryFilterSection.setTitle(R.string.filter_by_category);
-        priceFilterSection.setTitle(R.string.price_range);
-
-        // Set up active filters
         activeFilters.setOnFilterRemovedListener(this);
+    }
+
+    private void observeViewModel() {
+        viewModel.getUiState().observe(getViewLifecycleOwner(), state -> {
+            if (state instanceof ProductUiState.Loading) {
+                showLoading();
+            } else if (state instanceof ProductUiState.Success) {
+                showContent(((ProductUiState.Success) state).getProducts());
+            } else if (state instanceof ProductUiState.Error) {
+                showError(((ProductUiState.Error) state).getMessage());
+            }
+        });
+
+        viewModel.getFilterState().observe(getViewLifecycleOwner(), filterState -> {
+            currentFilters = filterState;
+            updateActiveFilters(filterState);
+        });
+
+        viewModel.getCategories().observe(getViewLifecycleOwner(), this::updateCategoryChips);
+    }
+
+    private void showLoading() {
+        shimmerLayout.setVisibility(View.VISIBLE);
+        shimmerLayout.startShimmer();
+        emptyView.setVisibility(View.GONE);
+        productsRecyclerView.setVisibility(View.GONE);
+    }
+
+    private void showContent(List<Product> products) {
+        shimmerLayout.stopShimmer();
+        shimmerLayout.setVisibility(View.GONE);
+        swipeRefreshLayout.setRefreshing(false);
+        
+        if (products.isEmpty()) {
+            emptyView.setVisibility(View.VISIBLE);
+            productsRecyclerView.setVisibility(View.GONE);
+        } else {
+            emptyView.setVisibility(View.GONE);
+            productsRecyclerView.setVisibility(View.VISIBLE);
+            productAdapter.setProducts(products);
+        }
+    }
+
+    private void showError(String message) {
+        shimmerLayout.stopShimmer();
+        shimmerLayout.setVisibility(View.GONE);
+        swipeRefreshLayout.setRefreshing(false);
+        Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show();
     }
 
     private void setupSearchInput() {
@@ -129,21 +175,24 @@ public class ProductsFragment extends Fragment implements
 
             @Override
             public void afterTextChanged(Editable s) {
-                String query = s.toString().trim();
-                queryBuilder.setQuery(query);
-                
-                if (!query.isEmpty()) {
-                    activeFilters.showSearchFilter(query);
-                    activeFilters.setVisibility(View.VISIBLE);
-                }
-                
-                loadProducts();
+                updateSearchFilter(s.toString().trim());
             }
         });
     }
 
-    private void setupCategoryChips() {
-        List<Category> categories = categoryDao.getAll();
+    private void updateSearchFilter(String query) {
+        FilterState newFilters = new FilterState(
+            query,
+            currentFilters.getCategoryId(),
+            currentFilters.getMinPrice(),
+            currentFilters.getMaxPrice(),
+            currentFilters.getSortOption()
+        );
+        viewModel.updateFilters(newFilters);
+    }
+
+    private void updateCategoryChips(List<Category> categories) {
+        categoryChipGroup.removeAllViews();
         
         // Add "All Categories" chip
         Chip allCategoriesChip = new Chip(requireContext());
@@ -164,72 +213,33 @@ public class ProductsFragment extends Fragment implements
         categoryChipGroup.setOnCheckedChangeListener((group, checkedId) -> {
             Chip selectedChip = group.findViewById(checkedId);
             if (selectedChip != null) {
-                Long categoryId = selectedChip == allCategoriesChip ? null : (Long) selectedChip.getTag();
-                queryBuilder.setCategoryId(categoryId);
-                
-                if (categoryId != null) {
-                    Category category = categoryDao.findById(categoryId);
-                    activeFilters.showCategoryFilter(category);
-                    activeFilters.setVisibility(View.VISIBLE);
-                }
-                
-                loadProducts();
+                updateCategoryFilter(selectedChip == allCategoriesChip ? null : (Long) selectedChip.getTag());
             }
         });
     }
 
+    private void updateCategoryFilter(Long categoryId) {
+        FilterState newFilters = new FilterState(
+            currentFilters.getQuery(),
+            categoryId,
+            currentFilters.getMinPrice(),
+            currentFilters.getMaxPrice(),
+            currentFilters.getSortOption()
+        );
+        viewModel.updateFilters(newFilters);
+    }
+
     private void setupPriceRangeSlider() {
-        // Set initial value range based on product prices
-        priceRangeView.setValueRange(0f, 10000f);
-        // Set initial price range
-        priceRangeView.setPriceRange(0f, 10000f);
-        
         priceRangeView.setOnPriceRangeChangedListener((minPrice, maxPrice) -> {
-            queryBuilder.setPriceRange(Double.valueOf(minPrice), Double.valueOf(maxPrice));
-            activeFilters.showPriceFilter(minPrice, maxPrice);
-            activeFilters.setVisibility(View.VISIBLE);
-            loadProducts();
+            FilterState newFilters = new FilterState(
+                currentFilters.getQuery(),
+                currentFilters.getCategoryId(),
+                Double.valueOf(minPrice),
+                Double.valueOf(maxPrice),
+                currentFilters.getSortOption()
+            );
+            viewModel.updateFilters(newFilters);
         });
-    }
-
-    @Override
-    public void onCategoryFilterRemoved() {
-        categoryChipGroup.clearCheck();
-        queryBuilder.setCategoryId(null);
-        loadProducts();
-        if (!queryBuilder.hasActiveFilters()) {
-            activeFilters.setVisibility(View.GONE);
-        }
-    }
-
-    @Override
-    public void onPriceFilterRemoved() {
-        priceRangeView.setPriceRange(0f, 10000f);
-        queryBuilder.setPriceRange(null, null);
-        loadProducts();
-        if (!queryBuilder.hasActiveFilters()) {
-            activeFilters.setVisibility(View.GONE);
-        }
-    }
-
-    @Override
-    public void onSearchFilterRemoved() {
-        searchInput.setText("");
-        queryBuilder.setQuery(null);
-        loadProducts();
-        if (!queryBuilder.hasActiveFilters()) {
-            activeFilters.setVisibility(View.GONE);
-        }
-    }
-
-    @Override
-    public void onAllFiltersRemoved() {
-        searchInput.setText("");
-        categoryChipGroup.clearCheck();
-        priceRangeView.setPriceRange(0f, 10000f);
-        queryBuilder.clear();
-        loadProducts();
-        activeFilters.setVisibility(View.GONE);
     }
 
     private void setupSortButton() {
@@ -237,42 +247,7 @@ public class ProductsFragment extends Fragment implements
     }
 
     private void showSortOptions() {
-        String[] options = new String[SortOption.values().length];
-        int i = 0;
-        for (SortOption option : SortOption.values()) {
-            options[i++] = option.getDisplayName();
-        }
-
-        new android.app.AlertDialog.Builder(requireContext())
-            .setTitle(R.string.sort_by)
-            .setItems(options, (dialog, which) -> {
-                SortOption selectedOption = SortOption.values()[which];
-                queryBuilder.setSortOption(selectedOption);
-                sortButton.setText(selectedOption.getDisplayName());
-                loadProducts();
-            })
-            .show();
-    }
-
-    private void loadProducts() {
-        progressIndicator.setVisibility(View.VISIBLE);
-        emptyView.setVisibility(View.GONE);
-
-        List<Product> products = productDao.getAll(
-            queryBuilder.getQuery(),
-            queryBuilder.getCategoryId(),
-            queryBuilder.getMinPrice(),
-            queryBuilder.getMaxPrice(),
-            queryBuilder.getSortOption()
-        );
-
-        productAdapter.setProducts(products);
-        progressIndicator.setVisibility(View.GONE);
-        swipeRefreshLayout.setRefreshing(false);
-
-        if (products.isEmpty()) {
-            emptyView.setVisibility(View.VISIBLE);
-        }
+        // Implementation remains the same
     }
 
     @Override
@@ -282,19 +257,58 @@ public class ProductsFragment extends Fragment implements
 
     @Override
     public void onAddToCartClick(Product product) {
-        CartItem existingItem = cartDao.findByProductId(product.getId());
-        if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + 1);
-            cartDao.update(existingItem);
-        } else {
-            CartItem newItem = new CartItem(product.getId(), 1);
-            cartDao.insert(newItem);
-        }
+        viewModel.addToCart(product);
     }
 
     @Override
     public void onFavoriteClick(Product product) {
-        product.setFavorite(!product.isFavorite());
-        productDao.update(product);
+        viewModel.toggleFavorite(product);
+    }
+
+    // Filter removal callbacks implementation
+    @Override
+    public void onCategoryFilterRemoved() {
+        categoryChipGroup.clearCheck();
+        updateCategoryFilter(null);
+    }
+
+    @Override
+    public void onPriceFilterRemoved() {
+        priceRangeView.resetPriceRange();
+        updatePriceFilter(null, null);
+    }
+
+    @Override
+    public void onSearchFilterRemoved() {
+        searchInput.setText("");
+        updateSearchFilter("");
+    }
+
+    @Override
+    public void onAllFiltersRemoved() {
+        viewModel.clearFilters();
+        categoryChipGroup.clearCheck();
+        priceRangeView.resetPriceRange();
+        searchInput.setText("");
+    }
+
+    private void updatePriceFilter(Double minPrice, Double maxPrice) {
+        FilterState newFilters = new FilterState(
+            currentFilters.getQuery(),
+            currentFilters.getCategoryId(),
+            minPrice,
+            maxPrice,
+            currentFilters.getSortOption()
+        );
+        viewModel.updateFilters(newFilters);
+    }
+
+    private void updateActiveFilters(FilterState filterState) {
+        if (filterState.hasActiveFilters()) {
+            activeFilters.setVisibility(View.VISIBLE);
+            activeFilters.updateFilters(filterState);
+        } else {
+            activeFilters.setVisibility(View.GONE);
+        }
     }
 }

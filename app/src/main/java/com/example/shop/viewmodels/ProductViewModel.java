@@ -1,89 +1,146 @@
 package com.example.shop.viewmodels;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-
+import androidx.lifecycle.ViewModelProvider;
+import com.example.shop.models.Category;
+import com.example.shop.models.FilterState;
 import com.example.shop.models.Product;
-import com.example.shop.models.SortOption;
-
+import com.example.shop.models.ProductUiState;
+import com.example.shop.repositories.ProductRepository;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.util.List;
 
-/**
- * ViewModel for handling product data and filtering operations
- */
 public class ProductViewModel extends ViewModel {
+    private final ProductRepository repository;
+    private final CompositeDisposable disposables = new CompositeDisposable();
     
-    private final MutableLiveData<List<Product>> products = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
+    private final MutableLiveData<ProductUiState> uiState = new MutableLiveData<>(new ProductUiState.Loading());
+    private final MutableLiveData<FilterState> filterState = new MutableLiveData<>(new FilterState());
+    private final MutableLiveData<List<Category>> categories = new MutableLiveData<>();
     
-    // Filter parameters
-    private String query;
-    private Long categoryId;
-    private Double minPrice;
-    private Double maxPrice;
-    private SortOption sortOption = SortOption.DATE_DESC;
+    public ProductViewModel(@NonNull ProductRepository repository) {
+        this.repository = repository;
+    }
     
-    /**
-     * Load products based on current filter settings
-     */
+    @NonNull
+    public LiveData<ProductUiState> getUiState() {
+        return uiState;
+    }
+    
+    @NonNull
+    public LiveData<FilterState> getFilterState() {
+        return filterState;
+    }
+
+    @NonNull
+    public LiveData<List<Category>> getCategories() {
+        return categories;
+    }
+
+    public void loadCategories() {
+        disposables.add(
+            repository.getCategories()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    categoriesList -> categories.setValue(categoriesList),
+                    error -> uiState.setValue(new ProductUiState.Error("Failed to load categories", error))
+                )
+        );
+    }
+    
     public void loadProducts() {
-        isLoading.setValue(true);
-        // TODO: Implement actual data loading from repository
-        isLoading.setValue(false);
+        FilterState currentFilters = filterState.getValue();
+        if (currentFilters == null) {
+            currentFilters = new FilterState();
+        }
+        
+        disposables.add(
+            repository.getProducts(currentFilters)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe(__ -> uiState.setValue(new ProductUiState.Loading()))
+                .subscribe(
+                    products -> uiState.setValue(new ProductUiState.Success(products)),
+                    error -> uiState.setValue(new ProductUiState.Error("Failed to load products", error))
+                )
+        );
     }
     
-    /**
-     * Set search query filter
-     */
-    public void setQuery(String query) {
-        this.query = query;
+    public void updateFilters(@NonNull FilterState newFilters) {
+        filterState.setValue(newFilters);
+        loadProducts();
     }
     
-    /**
-     * Set category filter
-     */
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
-    }
-    
-    /**
-     * Set price range filter
-     */
-    public void setPriceRange(Double minPrice, Double maxPrice) {
-        this.minPrice = minPrice;
-        this.maxPrice = maxPrice;
-    }
-    
-    /**
-     * Set sort option
-     */
-    public void setSortOption(SortOption sortOption) {
-        this.sortOption = sortOption;
-    }
-    
-    /**
-     * Clear all filters
-     */
     public void clearFilters() {
-        query = null;
-        categoryId = null;
-        minPrice = null;
-        maxPrice = null;
-        sortOption = SortOption.DATE_DESC;
+        filterState.setValue(new FilterState());
+        loadProducts();
     }
     
-    /**
-     * Get the product list LiveData
-     */
-    public LiveData<List<Product>> getProducts() {
-        return products;
+    public void addToCart(@NonNull Product product) {
+        disposables.add(
+            repository.addToCart(product)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    () -> {}, // Success - no UI update needed
+                    error -> uiState.setValue(new ProductUiState.Error("Failed to add to cart", error))
+                )
+        );
     }
     
-    /**
-     * Get the loading state LiveData
-     */
-    public LiveData<Boolean> getIsLoading() {
-        return isLoading;
+    public void toggleFavorite(@NonNull Product product) {
+        disposables.add(
+            repository.toggleFavorite(product)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    () -> loadProducts(), // Reload products to show updated favorite status
+                    error -> uiState.setValue(new ProductUiState.Error("Failed to update favorite", error))
+                )
+        );
     }
-} 
+
+    public LiveData<String> getCategoryName(long categoryId) {
+        MutableLiveData<String> categoryName = new MutableLiveData<>();
+        disposables.add(
+            repository.getCategoryName(categoryId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    categoryName::setValue,
+                    error -> uiState.setValue(new ProductUiState.Error("Failed to get category name", error))
+                )
+        );
+        return categoryName;
+    }
+    
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        disposables.clear();
+    }
+
+    public static class Factory implements ViewModelProvider.Factory {
+        private final ProductRepository repository;
+
+        public Factory(ProductRepository repository) {
+            this.repository = repository;
+        }
+
+        @NonNull
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+            if (modelClass.isAssignableFrom(ProductViewModel.class)) {
+                return (T) new ProductViewModel(repository);
+            }
+            throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());
+        }
+    }
+}

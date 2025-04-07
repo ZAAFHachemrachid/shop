@@ -1,126 +1,53 @@
 package com.example.shop.db.dao;
 
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import com.example.shop.db.ShopDatabase;
-import com.example.shop.models.CartItem;
+import androidx.room.Dao;
+import androidx.room.Insert;
+import androidx.room.Query;
+import androidx.room.Update;
+import androidx.room.Delete;
+import androidx.room.Transaction;
+
+import com.example.shop.models.Cart;
 import com.example.shop.models.Product;
-import java.util.ArrayList;
+
 import java.util.List;
 
-public class CartDao {
-    private ShopDatabase dbHelper;
-    private ProductDao productDao;
+@Dao
+public interface CartDao {
+    @Insert
+    long insert(Cart cartItem);
 
-    public CartDao(ShopDatabase dbHelper) {
-        this.dbHelper = dbHelper;
-        this.productDao = new ProductDao(dbHelper);
-    }
+    @Update
+    int update(Cart cartItem);
 
-    public long insert(CartItem cartItem) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(ShopDatabase.COLUMN_PRODUCT_ID, cartItem.getProductId());
-        values.put(ShopDatabase.COLUMN_QUANTITY, cartItem.getQuantity());
+    @Delete
+    void delete(Cart cartItem);
 
-        long id = db.insert(ShopDatabase.TABLE_CART, null, values);
-        cartItem.setId(id);
-        return id;
-    }
+    @Query("DELETE FROM cart WHERE product_id = :productId")
+    void deleteByProductId(long productId);
 
-    public int update(CartItem cartItem) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(ShopDatabase.COLUMN_QUANTITY, cartItem.getQuantity());
+    @Query("SELECT * FROM cart WHERE id = :cartId")
+    Cart findById(long cartId);
 
-        return db.update(ShopDatabase.TABLE_CART, values,
-                ShopDatabase.COLUMN_ID + " = ?",
-                new String[]{String.valueOf(cartItem.getId())});
-    }
+    @Query("SELECT * FROM cart WHERE product_id = :productId")
+    Cart findByProductId(long productId);
 
-    public void delete(long cartItemId) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.delete(ShopDatabase.TABLE_CART,
-                ShopDatabase.COLUMN_ID + " = ?",
-                new String[]{String.valueOf(cartItemId)});
-    }
+    @Query("SELECT * FROM cart ORDER BY created_at DESC")
+    List<Cart> getAll();
 
-    public void clearCart() {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.delete(ShopDatabase.TABLE_CART, null, null);
-    }
+    @Query("SELECT COUNT(*) FROM cart")
+    int getCount();
 
-    public CartItem get(long cartItemId) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query(ShopDatabase.TABLE_CART,
-                null,
-                ShopDatabase.COLUMN_ID + " = ?",
-                new String[]{String.valueOf(cartItemId)},
-                null, null, null);
+    @Query("SELECT SUM(c.quantity * p.price) FROM cart c JOIN products p ON c.product_id = p.id")
+    double getTotalPrice();
 
-        CartItem cartItem = null;
-        if (cursor != null && cursor.moveToFirst()) {
-            cartItem = createFromCursor(cursor);
-            cursor.close();
-        }
-        return cartItem;
-    }
+    @Query("UPDATE cart SET quantity = :quantity WHERE product_id = :productId")
+    void updateQuantity(long productId, int quantity);
 
-    public List<CartItem> getAll() {
-        List<CartItem> cartItems = new ArrayList<>();
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
+    @Query("DELETE FROM cart")
+    void clear();
 
-        Cursor cursor = db.query(ShopDatabase.TABLE_CART,
-                null, null, null, null, null,
-                ShopDatabase.COLUMN_CREATED_AT + " DESC");
-
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                CartItem item = createFromCursor(cursor);
-                // Load associated product
-                Product product = productDao.get(item.getProductId());
-                item.setProduct(product);
-                cartItems.add(item);
-            } while (cursor.moveToNext());
-            cursor.close();
-        }
-        return cartItems;
-    }
-
-    public CartItem findByProductId(long productId) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query(ShopDatabase.TABLE_CART,
-                null,
-                ShopDatabase.COLUMN_PRODUCT_ID + " = ?",
-                new String[]{String.valueOf(productId)},
-                null, null, null);
-
-        CartItem cartItem = null;
-        if (cursor != null && cursor.moveToFirst()) {
-            cartItem = createFromCursor(cursor);
-            cursor.close();
-        }
-        return cartItem;
-    }
-
-    public double getCartTotal() {
-        double total = 0;
-        List<CartItem> items = getAll();
-        for (CartItem item : items) {
-            if (item.getProduct() != null) {
-                total += item.getSubtotal();
-            }
-        }
-        return total;
-    }
-
-    private CartItem createFromCursor(Cursor cursor) {
-        return new CartItem(
-                cursor.getLong(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_ID)),
-                cursor.getLong(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_PRODUCT_ID)),
-                cursor.getInt(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_QUANTITY)),
-                cursor.getString(cursor.getColumnIndexOrThrow(ShopDatabase.COLUMN_CREATED_AT))
-        );
-    }
+    @Transaction
+    @Query("SELECT p.* FROM products p INNER JOIN cart c ON p.id = c.product_id")
+    List<Product> getCartProducts();
 }
